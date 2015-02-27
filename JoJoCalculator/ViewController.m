@@ -32,19 +32,22 @@
     // button标题追加到标签栏,clear和del需要特殊处理
     unichar buttonContent = [button.titleLabel.text characterAtIndex:0];
     
-    // 初始化输出结果
+    // 初始化输出结果，初始化分配内存，应该放到初始化的地方，这里暂时判断不为空则分配内存
     if (_resultString == nil)
     {
         _resultString = [[NSMutableString alloc] init];
     }
     
+    // endRange是用来标记最后一个输入字符，用于del操作，删除最后一个
     NSRange endRange;
     NSUInteger stringLength;
     switch (buttonContent) {
+        // 清除所有输入字符
         case 'C':
             _resultString = nil;
             break;
             
+        //  删除最后一个字符
         case 'D':
             stringLength = [_resultString length];
             if (stringLength <= 0)
@@ -80,20 +83,23 @@
     
     NSArray *calcArrayOperate = [_resultString componentsSeparatedByCharactersInSet: [NSCharacterSet characterSetWithCharactersInString:@"0123456789"]];
     
+    // 目前思路需要对已经处理过的数字和操作符做删除更改处理，因此用可变数组好处理点
     NSMutableArray *mutableArrayNumber = [[NSMutableArray alloc] init];
     NSMutableArray *mutableArrayOperate = [[NSMutableArray alloc] init];
     mutableArrayNumber = [NSMutableArray arrayWithArray:calcArrayNumber];
     mutableArrayOperate = [NSMutableArray arrayWithArray:calcArrayOperate];
     
-    // 删除分割后的空字符
+    // 删除分割后的空字符，拆分为操作符的那个可变数组会有很多空串
     [mutableArrayOperate removeObject:@""];
     
-    // 校验参数合法性
+    // 校验参数合法性，用户可能输入有误，比如2＋－4等
     if (![self checkInput:mutableArrayNumber :mutableArrayOperate]) {
         return;
     }
     
     // 用于定义计算完成后调整数字数组mutableArrayNumber的block
+    // 这里基本思路是每次运算完需要删除操作符和将运算结果存储到第一个数字位置，
+    // 删除另一个数字
     void (^adjustArray)(NSMutableArray *, NSUInteger, enum OPREATE_FLAG)
         = ^(NSMutableArray *mutableArrayNumber, NSUInteger index, enum OPREATE_FLAG operateFlag) {
             NSUInteger result;
@@ -112,6 +118,7 @@
                     break;
             }
             
+            // 第一个数字位置替换为结果
             mutableArrayNumber[index] = @(result);
             [mutableArrayNumber removeObjectAtIndex:(index + 1)];
         };
@@ -142,6 +149,7 @@
         }
     }
     
+    // 再计算加减
     continueCalc = true;
     while (continueCalc) {
         NSUInteger index;
